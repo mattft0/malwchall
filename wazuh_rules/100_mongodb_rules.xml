@@ -45,7 +45,7 @@
   <!-- ── NoSQL Injection patterns ───────────────────────────────── -->
   <rule id="100203" level="14">
     <if_sid>100200</if_sid>
-    <regex>(?i)(\$where|\$gt|\$gte|\$lt|\$lte|\$ne|\$nin|\$regex|\$or|\$and|\$nor|\$not|\$exists|\$type|\$in\b)</regex>
+    <regex type="pcre2">(?i)(\$where|\$gt|\$gte|\$lt|\$lte|\$ne|\$nin|\$regex|\$or|\$and|\$nor|\$not|\$exists|\$type|\$in\b)</regex>
     <description>MongoDB: NoSQL injection operator detected in query</description>
     <mitre>
       <id>T1190</id>
@@ -56,7 +56,7 @@
   <!-- ── Server-side JS execution (mapReduce / $function) ─────── -->
   <rule id="100204" level="14">
     <if_sid>100200</if_sid>
-    <regex>(?i)(mapReduce|\$function|\$accumulator|db\.eval|\.runCommand.*eval)</regex>
+    <regex type="pcre2">(?i)(mapReduce|\$function|\$accumulator|db\.eval|\.runCommand.*eval)</regex>
     <description>MongoDB: Server-side JavaScript execution attempt</description>
     <mitre>
       <id>T1059.007</id>
@@ -67,7 +67,7 @@
   <!-- ── Database dump / exfiltration ──────────────────────────── -->
   <rule id="100205" level="13">
     <if_sid>100200</if_sid>
-    <regex>(?i)(mongodump|mongoexport|\.find\(\)\.|\.aggregate\(\[.*\$out|copyDatabase|cloneCollection)</regex>
+    <regex type="pcre2">(?i)(mongodump|mongoexport|\.find\(\)\.|\.aggregate\(\[.*\$out|copyDatabase|cloneCollection)</regex>
     <description>MongoDB: Possible database dump/exfiltration activity</description>
     <mitre>
       <id>T1020</id>
@@ -78,7 +78,7 @@
   <!-- ── User creation / privilege change ──────────────────────── -->
   <rule id="100206" level="12">
     <if_sid>100200</if_sid>
-    <regex>(?i)(createUser|grantRolesToUser|updateUser|createRole|grantPrivilegesToRole|db\.addUser)</regex>
+    <regex type="pcre2">(?i)(createUser|grantRolesToUser|updateUser|createRole|grantPrivilegesToRole|db\.addUser)</regex>
     <description>MongoDB: User/role modification detected</description>
     <mitre>
       <id>T1136</id>
@@ -89,7 +89,7 @@
   <!-- ── Accessing system collections ──────────────────────────── -->
   <rule id="100207" level="11">
     <if_sid>100200</if_sid>
-    <regex>(?i)(system\.users|system\.roles|admin\.system|local\.oplog|config\.mongos)</regex>
+    <regex type="pcre2">(?i)(system\.users|system\.roles|admin\.system|local\.oplog|config\.mongos)</regex>
     <description>MongoDB: Access to sensitive system collection</description>
     <mitre>
       <id>T1003</id>

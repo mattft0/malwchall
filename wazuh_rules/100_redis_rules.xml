@@ -45,7 +45,7 @@
   <!-- ── CONFIG SET abuse (cron/SSH injection RCE) ─────────────── -->
   <rule id="100303" level="15">
     <if_sid>100300</if_sid>
-    <regex>(?i)(CONFIG\s+SET\s+(dir|dbfilename|requirepass|save|bind|slaveof|replicaof)|SLAVEOF\s+|REPLICAOF\s+)</regex>
+    <regex type="pcre2">(?i)(CONFIG\s+SET\s+(dir|dbfilename|requirepass|save|bind|slaveof|replicaof)|SLAVEOF\s+|REPLICAOF\s+)</regex>
     <description>Redis: Dangerous CONFIG SET or replication command — possible RCE attempt</description>
     <mitre>
       <id>T1505</id>
@@ -56,7 +56,7 @@
   <!-- ── Data destruction ───────────────────────────────────────── -->
   <rule id="100304" level="14">
     <if_sid>100300</if_sid>
-    <regex>(?i)(FLUSHALL|FLUSHDB|DEBUG\s+RELOAD|DEBUG\s+LOADAOF|BGREWRITEAOF)</regex>
+    <regex type="pcre2">(?i)(FLUSHALL|FLUSHDB|DEBUG\s+RELOAD|DEBUG\s+LOADAOF|BGREWRITEAOF)</regex>
     <description>Redis: Destructive or debug command detected</description>
     <mitre>
       <id>T1485</id>
@@ -67,7 +67,7 @@
   <!-- ── Lua script abuse (EVAL) ───────────────────────────────── -->
   <rule id="100305" level="12">
     <if_sid>100300</if_sid>
-    <regex>(?i)(EVAL\s+|EVALSHA\s+|SCRIPT\s+LOAD)</regex>
+    <regex type="pcre2">(?i)(EVAL\s+|EVALSHA\s+|SCRIPT\s+LOAD)</regex>
     <description>Redis: Lua script execution — potential code execution</description>
     <mitre>
       <id>T1059</id>
@@ -89,7 +89,7 @@
   <!-- ── Module load (potential plugin RCE) ────────────────────── -->
   <rule id="100307" level="14">
     <if_sid>100300</if_sid>
-    <regex>(?i)(MODULE\s+LOAD|loadmodule)</regex>
+    <regex type="pcre2">(?i)(MODULE\s+LOAD|loadmodule)</regex>
     <description>Redis: External module load — possible malicious plugin</description>
     <mitre>
       <id>T1547</id>

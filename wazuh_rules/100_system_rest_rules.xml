@@ -27,7 +27,7 @@
   <!-- Mass assignment / parameter pollution -->
   <rule id="100701" level="11">
     <if_sid>100700</if_sid>
-    <regex>(?i)("role"\s*:\s*"admin"|"is_admin"\s*:\s*true|"isAdmin"\s*:\s*true|"admin"\s*:\s*true|"privilege"\s*:\s*|"__proto__"\s*:|"\$__proto__"\s*:|"constructor"\s*:\s*\{)</regex>
+    <regex type="pcre2">(?i)("role"\s*:\s*"admin"|"is_admin"\s*:\s*true|"isAdmin"\s*:\s*true|"admin"\s*:\s*true|"privilege"\s*:\s*|"__proto__"\s*:|"\$__proto__"\s*:|"constructor"\s*:\s*\{)</regex>
     <description>REST/JSON: Mass assignment or prototype pollution attempt</description>
     <mitre>
       <id>T1190</id>
@@ -38,7 +38,7 @@
   <!-- HTTP verb tampering -->
   <rule id="100702" level="10">
     <if_sid>100700</if_sid>
-    <regex>(?i)(X-HTTP-Method-Override|X-Method-Override|X-HTTP-Method)\s*:\s*(DELETE|PUT|PATCH)</regex>
+    <regex type="pcre2">(?i)(X-HTTP-Method-Override|X-Method-Override|X-HTTP-Method)\s*:\s*(DELETE|PUT|PATCH)</regex>
     <description>REST: HTTP verb tampering via override header</description>
     <mitre>
       <id>T1190</id>
@@ -64,7 +64,7 @@
 
   <!-- SUID/GUID abuse -->
   <rule id="100710" level="12">
-    <regex>(?i)(chmod\s+[ugo+]*[sS]|chmod\s+4[0-9]{3}|chmod\s+6[0-9]{3}|find.*-perm.*-4000|find.*-perm.*-2000)</regex>
+    <regex type="pcre2">(?i)(chmod\s+[ugo+]*[sS]|chmod\s+4[0-9]{3}|chmod\s+6[0-9]{3}|find.*-perm.*-4000|find.*-perm.*-2000)</regex>
     <description>System: SUID/SGID bit set — privilege escalation risk</description>
     <mitre>
       <id>T1548.001</id>
@@ -75,7 +75,7 @@
   <!-- sudo abuse -->
   <rule id="100711" level="11">
     <match>sudo: </match>
-    <regex>(?i)(command not allowed|NOT in sudoers|3 incorrect password attempts|sudo su|sudo -i|sudo bash|sudo sh)</regex>
+    <regex type="pcre2">(?i)(command not allowed|NOT in sudoers|3 incorrect password attempts|sudo su|sudo -i|sudo bash|sudo sh)</regex>
     <description>System: Suspicious sudo usage or sudo failure</description>
     <mitre>
       <id>T1548.003</id>
@@ -85,7 +85,7 @@
 
   <!-- Reverse shell indicators -->
   <rule id="100720" level="15">
-    <regex>(?i)(bash\s+-i\s+>&amp;|/dev/tcp/|nc\s+-e\s+/bin|ncat.*-e|python.*socket.*connect|perl.*socket.*connect|ruby.*socket.*connect|php.*fsockopen|mkfifo.*nc|rm\s+/tmp.*mkfifo|socat.*exec)</regex>
+    <regex type="pcre2">(?i)(bash\s+-i\s+>&amp;|/dev/tcp/|nc\s+-e\s+/bin|ncat.*-e|python.*socket.*connect|perl.*socket.*connect|ruby.*socket.*connect|php.*fsockopen|mkfifo.*nc|rm\s+/tmp.*mkfifo|socat.*exec)</regex>
     <description>System: Reverse shell command detected</description>
     <mitre>
       <id>T1059</id>
@@ -95,7 +95,7 @@
 
   <!-- Crontab modification (persistence) -->
   <rule id="100721" level="11">
-    <regex>(?i)(crontab\s+-e|echo.*>\s*/etc/cron|tee\s+/etc/cron|>\s*/var/spool/cron|cron.*REPLACE|NEW_LINE.*cron)</regex>
+    <regex type="pcre2">(?i)(crontab\s+-e|echo.*>\s*/etc/cron|tee\s+/etc/cron|>\s*/var/spool/cron|cron.*REPLACE|NEW_LINE.*cron)</regex>
     <description>System: Crontab modification detected — possible persistence</description>
     <mitre>
       <id>T1053.003</id>
@@ -105,7 +105,7 @@
 
   <!-- SSH authorized_keys modification -->
   <rule id="100722" level="13">
-    <regex>(?i)(authorized_keys|\.ssh/authorized|ssh-rsa\s+AAAA|ssh-ed25519\s+AAAA|echo.*authorized_keys|tee.*\.ssh)</regex>
+    <regex type="pcre2">(?i)(authorized_keys|\.ssh/authorized|ssh-rsa\s+AAAA|ssh-ed25519\s+AAAA|echo.*authorized_keys|tee.*\.ssh)</regex>
     <description>System: SSH authorized_keys modified — possible backdoor</description>
     <mitre>
       <id>T1098.004</id>
@@ -115,7 +115,7 @@
 
   <!-- New user creation -->
   <rule id="100723" level="12">
-    <regex>(?i)(useradd|adduser|usermod.*-G\s+sudo|usermod.*-aG\s+sudo|passwd\s+root|chpasswd)</regex>
+    <regex type="pcre2">(?i)(useradd|adduser|usermod.*-G\s+sudo|usermod.*-aG\s+sudo|passwd\s+root|chpasswd)</regex>
     <description>System: User account creation or privilege modification</description>
     <mitre>
       <id>T1136.001</id>
@@ -125,7 +125,7 @@
 
   <!-- Downloads from the internet to /tmp -->
   <rule id="100724" level="11">
-    <regex>(?i)(wget\s+http|curl\s+-[sS]*[oO]\s+/tmp|curl\s+http.*\s+-o\s+/tmp|python.*urllib.*download|pip\s+install.*--index-url\s+http://)</regex>
+    <regex type="pcre2">(?i)(wget\s+http|curl\s+-[sS]*[oO]\s+/tmp|curl\s+http.*\s+-o\s+/tmp|python.*urllib.*download|pip\s+install.*--index-url\s+http://)</regex>
     <description>System: File downloaded to /tmp — possible payload staging</description>
     <mitre>
       <id>T1105</id>
@@ -135,7 +135,7 @@
 
   <!-- /tmp execution -->
   <rule id="100725" level="12">
-    <regex>(?i)(exec.*/tmp/|bash\s+/tmp/|sh\s+/tmp/|python.*\/tmp\/|chmod.*\/tmp\/.*\+x)</regex>
+    <regex type="pcre2">(?i)(exec.*/tmp/|bash\s+/tmp/|sh\s+/tmp/|python.*\/tmp\/|chmod.*\/tmp\/.*\+x)</regex>
     <description>System: Executable run from /tmp — common malware staging area</description>
     <mitre>
       <id>T1059</id>
@@ -145,7 +145,7 @@
 
   <!-- Port scanning / network recon from host -->
   <rule id="100726" level="11">
-    <regex>(?i)(nmap\s|masscan\s|zmap\s|portscan|scanning\s+[0-9]+\s+ports)</regex>
+    <regex type="pcre2">(?i)(nmap\s|masscan\s|zmap\s|portscan|scanning\s+[0-9]+\s+ports)</regex>
     <description>System: Network port scanning tool executed</description>
     <mitre>
       <id>T1046</id>
@@ -155,7 +155,7 @@
 
   <!-- LD_PRELOAD injection -->
   <rule id="100730" level="14">
-    <regex>(?i)(LD_PRELOAD\s*=|LD_LIBRARY_PATH\s*=.*\/tmp|export\s+LD_PRELOAD)</regex>
+    <regex type="pcre2">(?i)(LD_PRELOAD\s*=|LD_LIBRARY_PATH\s*=.*\/tmp|export\s+LD_PRELOAD)</regex>
     <description>System: LD_PRELOAD injection detected — shared library hijack</description>
     <mitre>
       <id>T1574.006</id>
@@ -165,7 +165,7 @@
 
   <!-- Python pip install suspicious packages -->
   <rule id="100731" level="11">
-    <regex>(?i)(pip\s+install\s+--extra-index|pip\s+install.*http://|pip3\s+install.*--index-url\s+http://)</regex>
+    <regex type="pcre2">(?i)(pip\s+install\s+--extra-index|pip\s+install.*http://|pip3\s+install.*--index-url\s+http://)</regex>
     <description>Python: Package installed from untrusted/HTTP source — possible supply chain attack</description>
     <mitre>
       <id>T1195.001</id>

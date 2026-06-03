@@ -140,7 +140,7 @@
   <!-- kubectl get secret from shell -->
   <rule id="100611" level="13">
     <if_sid>100610</if_sid>
-    <regex>(?i)(kubectl\s+get\s+secret|kubectl\s+describe\s+secret|kubectl\s+exec.*sh|kubectl\s+exec.*bash|kubectl\s+port-forward)</regex>
+    <regex type="pcre2">(?i)(kubectl\s+get\s+secret|kubectl\s+describe\s+secret|kubectl\s+exec.*sh|kubectl\s+exec.*bash|kubectl\s+port-forward)</regex>
     <description>K8s: Sensitive kubectl command executed on host</description>
     <mitre>
       <id>T1552.007</id>

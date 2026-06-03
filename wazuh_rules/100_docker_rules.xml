@@ -24,7 +24,7 @@
   <!-- ── Privileged container launched ─────────────────────────── -->
   <rule id="100501" level="14">
     <if_sid>100500</if_sid>
-    <regex>(?i)(--privileged|\"Privileged\":true|SecurityOpt.*apparmor:unconfined|SecurityOpt.*seccomp:unconfined|cap-add\s+ALL\b|CapAdd.*ALL)</regex>
+    <regex type="pcre2">(?i)(--privileged|\"Privileged\":true|SecurityOpt.*apparmor:unconfined|SecurityOpt.*seccomp:unconfined|cap-add\s+ALL\b|CapAdd.*ALL)</regex>
     <description>Docker: Privileged container started — container escape risk</description>
     <mitre>
       <id>T1611</id>
@@ -35,7 +35,7 @@
   <!-- ── Host namespace sharing ─────────────────────────────────── -->
   <rule id="100502" level="13">
     <if_sid>100500</if_sid>
-    <regex>(?i)(--pid=host|--network=host|--ipc=host|\"PidMode\":\"host\"|\"NetworkMode\":\"host\"|\"IpcMode\":\"host\")</regex>
+    <regex type="pcre2">(?i)(--pid=host|--network=host|--ipc=host|\"PidMode\":\"host\"|\"NetworkMode\":\"host\"|\"IpcMode\":\"host\")</regex>
     <description>Docker: Container sharing host PID/network/IPC namespace</description>
     <mitre>
       <id>T1611</id>
@@ -46,7 +46,7 @@
   <!-- ── Docker socket mounted inside container ─────────────────── -->
   <rule id="100503" level="15">
     <if_sid>100500</if_sid>
-    <regex>(?i)(/var/run/docker\.sock|\"Source\":\"/var/run/docker\.sock\"|docker\.sock:/var/run/docker\.sock)</regex>
+    <regex type="pcre2">(?i)(/var/run/docker\.sock|\"Source\":\"/var/run/docker\.sock\"|docker\.sock:/var/run/docker\.sock)</regex>
     <description>Docker: Docker socket mounted into container — full host takeover possible</description>
     <mitre>
       <id>T1611</id>
@@ -57,7 +57,7 @@
   <!-- ── Sensitive host path bind-mounted ──────────────────────── -->
   <rule id="100504" level="13">
     <if_sid>100500</if_sid>
-    <regex>(?i)(-v\s+/:/|Binds.*\"/:\/|Binds.*\"/etc:|Binds.*\"/root:|Binds.*\"/home:|Binds.*\"/proc:|Binds.*\"/sys:)</regex>
+    <regex type="pcre2">(?i)(-v\s+/:/|Binds.*\"/:\/|Binds.*\"/etc:|Binds.*\"/root:|Binds.*\"/home:|Binds.*\"/proc:|Binds.*\"/sys:)</regex>
     <description>Docker: Sensitive host path mounted into container</description>
     <mitre>
       <id>T1005</id>
@@ -68,7 +68,7 @@
   <!-- ── docker exec into running container ─────────────────────── -->
   <rule id="100505" level="10">
     <if_sid>100500</if_sid>
-    <regex>(?i)(docker exec|ExecCreate|ExecStart)</regex>
+    <regex type="pcre2">(?i)(docker exec|ExecCreate|ExecStart)</regex>
     <description>Docker: Exec command into running container — interactive shell possible</description>
     <mitre>
       <id>T1609</id>
@@ -79,7 +79,7 @@
   <!-- ── docker exec with shell ─────────────────────────────────── -->
   <rule id="100506" level="13">
     <if_sid>100505</if_sid>
-    <regex>(?i)(exec.*(/bin/sh|/bin/bash|/bin/ash|cmd\.exe|powershell))</regex>
+    <regex type="pcre2">(?i)(exec.*(/bin/sh|/bin/bash|/bin/ash|cmd\.exe|powershell))</regex>
     <description>Docker: Interactive shell spawned inside container</description>
     <mitre>
       <id>T1059</id>
@@ -90,7 +90,7 @@
   <!-- ── Suspicious image pull (pentest tools) ─────────────────── -->
   <rule id="100507" level="12">
     <if_sid>100500</if_sid>
-    <regex>(?i)(pull.*kali|pull.*metasploit|pull.*parrot|pull.*blackarch|pull.*pwnbox|pull.*offensive|pull.*exploit|pull.*reverseshell)</regex>
+    <regex type="pcre2">(?i)(pull.*kali|pull.*metasploit|pull.*parrot|pull.*blackarch|pull.*pwnbox|pull.*offensive|pull.*exploit|pull.*reverseshell)</regex>
     <description>Docker: Suspicious/offensive security image pulled</description>
     <mitre>
       <id>T1610</id>
@@ -101,7 +101,7 @@
   <!-- ── Container running as root uid:0 ───────────────────────── -->
   <rule id="100508" level="10">
     <if_sid>100500</if_sid>
-    <regex>(?i)(\"User\":\"root\"|user=root\b|--user=0\b|--user\s+0\b)</regex>
+    <regex type="pcre2">(?i)(\"User\":\"root\"|user=root\b|--user=0\b|--user\s+0\b)</regex>
     <description>Docker: Container explicitly running as root user</description>
     <mitre>
       <id>T1078.003</id>

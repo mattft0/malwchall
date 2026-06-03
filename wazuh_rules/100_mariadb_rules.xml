@@ -44,7 +44,7 @@
   <!-- ── SQL Injection patterns ──────────────────────────────────── -->
   <rule id="100103" level="12">
     <if_sid>100100</if_sid>
-    <regex>(?i)(union\s+select|or\s+1\s*=\s*1|or\s+'[^']*'\s*=\s*'[^']*'|--|#\s*$|;\s*drop\s+table|;\s*delete\s+from|BENCHMARK\s*\(|SLEEP\s*\(|WAITFOR\s+DELAY|@@version|information_schema)</regex>
+    <regex type="pcre2">(?i)(union\s+select|or\s+1\s*=\s*1|or\s+'[^']*'\s*=\s*'[^']*'|--|#\s*$|;\s*drop\s+table|;\s*delete\s+from|BENCHMARK\s*\(|SLEEP\s*\(|WAITFOR\s+DELAY|@@version|information_schema)</regex>
     <description>MariaDB: SQL Injection attempt detected</description>
     <mitre>
       <id>T1190</id>
@@ -55,7 +55,7 @@
   <!-- ── Privilege escalation ───────────────────────────────────── -->
   <rule id="100104" level="12">
     <if_sid>100100</if_sid>
-    <regex>(?i)(GRANT\s+ALL|GRANT\s+FILE|CREATE\s+USER|ALTER\s+USER|SET\s+GLOBAL\s+general_log|FLUSH\s+PRIVILEGES)</regex>
+    <regex type="pcre2">(?i)(GRANT\s+ALL|GRANT\s+FILE|CREATE\s+USER|ALTER\s+USER|SET\s+GLOBAL\s+general_log|FLUSH\s+PRIVILEGES)</regex>
     <description>MariaDB: Privilege escalation / configuration change attempt</description>
     <mitre>
       <id>T1078</id>
@@ -66,7 +66,7 @@
   <!-- ── Data exfiltration via file operations ─────────────────── -->
   <rule id="100105" level="14">
     <if_sid>100100</if_sid>
-    <regex>(?i)(SELECT\s+.*INTO\s+OUTFILE|LOAD\s+DATA\s+(LOCAL\s+)?INFILE|INTO\s+DUMPFILE)</regex>
+    <regex type="pcre2">(?i)(SELECT\s+.*INTO\s+OUTFILE|LOAD\s+DATA\s+(LOCAL\s+)?INFILE|INTO\s+DUMPFILE)</regex>
     <description>MariaDB: Possible data exfiltration via file operation</description>
     <mitre>
       <id>T1020</id>
@@ -77,7 +77,7 @@
   <!-- ── UDF / stored procedure abuse ──────────────────────────── -->
   <rule id="100106" level="14">
     <if_sid>100100</if_sid>
-    <regex>(?i)(CREATE\s+FUNCTION.*soname|sys_exec|lib_mysqludf|CREATE\s+PROCEDURE\s+.*DETERMINISTIC)</regex>
+    <regex type="pcre2">(?i)(CREATE\s+FUNCTION.*soname|sys_exec|lib_mysqludf|CREATE\s+PROCEDURE\s+.*DETERMINISTIC)</regex>
     <description>MariaDB: Possible UDF/stored procedure abuse for code execution</description>
     <mitre>
       <id>T1059</id>
@@ -96,7 +96,7 @@
   <!-- ── Anonymous login ────────────────────────────────────────── -->
   <rule id="100108" level="10">
     <if_sid>100100</if_sid>
-    <regex>(?i)user\s*=\s*''|anonymous\s+user</regex>
+    <regex type="pcre2">(?i)user\s*=\s*''|anonymous\s+user</regex>
     <description>MariaDB: Anonymous login attempt</description>
     <mitre>
       <id>T1078.001</id>
