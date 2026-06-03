@@ -73,7 +73,7 @@
     <if_sid>100600</if_sid>
     <field name="objectRef.resource">pods</field>
     <field name="verb">create</field>
-    <field name="requestObject">\.privileged.*true|hostPID.*true|hostNetwork.*true|hostIPC.*true</field>
+    <regex type="pcre2">privileged.*true|hostPID.*true|hostNetwork.*true|hostIPC.*true</regex>
     <description>K8s: Privileged or host-namespace pod created — container escape risk</description>
     <mitre>
       <id>T1611</id>
@@ -86,7 +86,7 @@
     <if_sid>100600</if_sid>
     <field name="objectRef.resource">clusterroles|roles</field>
     <field name="verb">create|update</field>
-    <field name="requestObject">\*</field>
+    <regex type="pcre2">"verbs":\s*\["\*"\]|"\*"</regex>
     <description>K8s: ClusterRole with wildcard (*) permissions created</description>
     <mitre>
       <id>T1078</id>
@@ -120,10 +120,9 @@
 
   <!-- ── Access denied (403) burst ─────────────────────────────── -->
   <rule id="100609" level="10" frequency="10" timeframe="60">
-    <if_sid>100600</if_sid>
+    <if_matched_sid>100600</if_matched_sid>
     <field name="responseStatus.code">403</field>
-    <same_field>user.username</same_field>
-    <description>K8s: User repeatedly denied — possible API brute force/recon</description>
+    <description>K8s: Repeated 403 denials — possible API brute force/recon</description>
     <mitre>
       <id>T1078</id>
     </mitre>
