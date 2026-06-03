@@ -19,7 +19,6 @@
        ════════════════════════════════════════════════════════════ -->
 
   <rule id="100700" level="3">
-    <decoded_as>syslog</decoded_as>
     <match>GET |POST |PUT |DELETE |PATCH |OPTIONS </match>
     <description>Web: HTTP REST request</description>
     <group>rest_api,</group>
@@ -65,7 +64,6 @@
 
   <!-- SUID/GUID abuse -->
   <rule id="100710" level="12">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(chmod\s+[ugo+]*[sS]|chmod\s+4[0-9]{3}|chmod\s+6[0-9]{3}|find.*-perm.*-4000|find.*-perm.*-2000)</regex>
     <description>System: SUID/SGID bit set — privilege escalation risk</description>
     <mitre>
@@ -76,7 +74,6 @@
 
   <!-- sudo abuse -->
   <rule id="100711" level="11">
-    <decoded_as>syslog</decoded_as>
     <match>sudo: </match>
     <regex>(?i)(command not allowed|NOT in sudoers|3 incorrect password attempts|sudo su|sudo -i|sudo bash|sudo sh)</regex>
     <description>System: Suspicious sudo usage or sudo failure</description>
@@ -88,8 +85,7 @@
 
   <!-- Reverse shell indicators -->
   <rule id="100720" level="15">
-    <decoded_as>syslog</decoded_as>
-    <regex>(?i)(bash\s+-i\s+>&|/dev/tcp/|nc\s+-e\s+/bin|ncat.*-e|python.*socket.*connect|perl.*socket.*connect|ruby.*socket.*connect|php.*fsockopen|mkfifo.*nc|rm\s+/tmp.*mkfifo|socat.*exec)</regex>
+    <regex>(?i)(bash\s+-i\s+>&amp;|/dev/tcp/|nc\s+-e\s+/bin|ncat.*-e|python.*socket.*connect|perl.*socket.*connect|ruby.*socket.*connect|php.*fsockopen|mkfifo.*nc|rm\s+/tmp.*mkfifo|socat.*exec)</regex>
     <description>System: Reverse shell command detected</description>
     <mitre>
       <id>T1059</id>
@@ -99,7 +95,6 @@
 
   <!-- Crontab modification (persistence) -->
   <rule id="100721" level="11">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(crontab\s+-e|echo.*>\s*/etc/cron|tee\s+/etc/cron|>\s*/var/spool/cron|cron.*REPLACE|NEW_LINE.*cron)</regex>
     <description>System: Crontab modification detected — possible persistence</description>
     <mitre>
@@ -110,7 +105,6 @@
 
   <!-- SSH authorized_keys modification -->
   <rule id="100722" level="13">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(authorized_keys|\.ssh/authorized|ssh-rsa\s+AAAA|ssh-ed25519\s+AAAA|echo.*authorized_keys|tee.*\.ssh)</regex>
     <description>System: SSH authorized_keys modified — possible backdoor</description>
     <mitre>
@@ -121,7 +115,6 @@
 
   <!-- New user creation -->
   <rule id="100723" level="12">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(useradd|adduser|usermod.*-G\s+sudo|usermod.*-aG\s+sudo|passwd\s+root|chpasswd)</regex>
     <description>System: User account creation or privilege modification</description>
     <mitre>
@@ -132,7 +125,6 @@
 
   <!-- Downloads from the internet to /tmp -->
   <rule id="100724" level="11">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(wget\s+http|curl\s+-[sS]*[oO]\s+/tmp|curl\s+http.*\s+-o\s+/tmp|python.*urllib.*download|pip\s+install.*--index-url\s+http://)</regex>
     <description>System: File downloaded to /tmp — possible payload staging</description>
     <mitre>
@@ -143,7 +135,6 @@
 
   <!-- /tmp execution -->
   <rule id="100725" level="12">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(exec.*/tmp/|bash\s+/tmp/|sh\s+/tmp/|python.*\/tmp\/|chmod.*\/tmp\/.*\+x)</regex>
     <description>System: Executable run from /tmp — common malware staging area</description>
     <mitre>
@@ -154,7 +145,6 @@
 
   <!-- Port scanning / network recon from host -->
   <rule id="100726" level="11">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(nmap\s|masscan\s|zmap\s|portscan|scanning\s+[0-9]+\s+ports)</regex>
     <description>System: Network port scanning tool executed</description>
     <mitre>
@@ -165,7 +155,6 @@
 
   <!-- LD_PRELOAD injection -->
   <rule id="100730" level="14">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(LD_PRELOAD\s*=|LD_LIBRARY_PATH\s*=.*\/tmp|export\s+LD_PRELOAD)</regex>
     <description>System: LD_PRELOAD injection detected — shared library hijack</description>
     <mitre>
@@ -176,7 +165,6 @@
 
   <!-- Python pip install suspicious packages -->
   <rule id="100731" level="11">
-    <decoded_as>syslog</decoded_as>
     <regex>(?i)(pip\s+install\s+--extra-index|pip\s+install.*http://|pip3\s+install.*--index-url\s+http://)</regex>
     <description>Python: Package installed from untrusted/HTTP source — possible supply chain attack</description>
     <mitre>

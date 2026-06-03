@@ -21,7 +21,6 @@
 
   <!-- Base: any web access log line -->
   <rule id="100400" level="3">
-    <decoded_as>syslog</decoded_as>
     <match>GET |POST |PUT |DELETE |PATCH </match>
     <description>Web: HTTP request log</description>
     <group>web,</group>

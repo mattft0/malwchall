@@ -15,7 +15,6 @@
 
   <!-- ── Base rule ─────────────────────────────────────────────── -->
   <rule id="100200" level="3">
-    <decoded_as>syslog</decoded_as>
     <match>mongod|mongodb</match>
     <description>MongoDB: generic log entry</description>
     <group>mongodb,</group>

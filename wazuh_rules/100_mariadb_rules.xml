@@ -14,7 +14,6 @@
 
   <!-- ── Base rule: catch all MariaDB log lines ─────────────────── -->
   <rule id="100100" level="3">
-    <decoded_as>syslog</decoded_as>
     <match>MariaDB|mysqld|mysql</match>
     <description>MariaDB: generic log entry</description>
     <group>mariadb,</group>

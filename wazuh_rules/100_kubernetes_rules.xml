@@ -132,7 +132,6 @@
 
   <!-- ── k3s specific: direct binary invocation patterns ─────────── -->
   <rule id="100610" level="10">
-    <decoded_as>syslog</decoded_as>
     <match>k3s|kubectl|kubeadm</match>
     <description>K3s/k8s: CLI tool invocation</description>
     <group>kubernetes,</group>

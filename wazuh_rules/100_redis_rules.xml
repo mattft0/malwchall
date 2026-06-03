@@ -15,7 +15,6 @@
 
   <!-- ── Base rule ─────────────────────────────────────────────── -->
   <rule id="100300" level="3">
-    <decoded_as>syslog</decoded_as>
     <match>redis-server|redis|REDIS</match>
     <description>Redis: generic log entry</description>
     <group>redis,</group>

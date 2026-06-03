@@ -16,7 +16,6 @@
 
   <!-- ── Base: Docker daemon events (via command output) ───────── -->
   <rule id="100500" level="3">
-    <decoded_as>syslog</decoded_as>
     <match>docker|containerd|runc</match>
     <description>Docker: generic event</description>
     <group>docker,</group>
