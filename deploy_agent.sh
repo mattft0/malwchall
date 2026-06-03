@@ -26,20 +26,19 @@ error()   { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG"; exit 1; }
 
 # ─── STEP 1 — Installer l'agent Wazuh ────────────────────────────────────────
 install_agent() {
-    if systemctl is-active --quiet wazuh-agent 2>/dev/null; then
-        warn "Wazuh Agent déjà actif — skip install."
-        return
-    fi
-
-    info "Step 1/4 — Ajout du dépôt Wazuh..."
+    info "Step 1/4 — Ajout du dépôt Wazuh (version 4.10 pour s'aligner avec le Manager)..."
     curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH \
         | gpg --yes --dearmor -o /usr/share/keyrings/wazuh.gpg
-    echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" \
+    echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.10/apt/ stable main" \
         > /etc/apt/sources.list.d/wazuh.list
     apt-get update -y >> "$LOG" 2>&1
 
-    info "Installation de l'agent (pointé vers $MANAGER_IP)..."
-    WAZUH_MANAGER="$MANAGER_IP" apt-get install -y wazuh-agent >> "$LOG" 2>&1
+    info "Installation/Downgrade de l'agent (pointé vers $MANAGER_IP)..."
+    # Supprime la version supérieure si elle existe déjà pour forcer l'alignement
+    if dpkg -l | grep -q wazuh-agent; then
+        apt-get remove -y wazuh-agent >> "$LOG" 2>&1 || true
+    fi
+    WAZUH_MANAGER="$MANAGER_IP" apt-get install -y --allow-downgrades wazuh-agent >> "$LOG" 2>&1
     success "Agent installé et configuré pour: $MANAGER_IP"
 }
 
