@@ -33,7 +33,7 @@ install_agent() {
 
     info "Step 1/4 — Ajout du dépôt Wazuh..."
     curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH \
-        | gpg --dearmor -o /usr/share/keyrings/wazuh.gpg
+        | gpg --yes --dearmor -o /usr/share/keyrings/wazuh.gpg
     echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" \
         > /etc/apt/sources.list.d/wazuh.list
     apt-get update -y >> "$LOG" 2>&1
@@ -54,7 +54,7 @@ configure_agent_logs() {
     cp "$conf" "${conf}.bak.$(date +%s)"
 
     # On injecte les localfile AVANT </ossec_config>
-    local LOGFILES='
+    export LOGFILES='
   <!-- ===== BlueTeam Challenge — Logs services à monitorer ===== -->
 
   <!-- Système & Auth -->
@@ -163,12 +163,27 @@ configure_agent_logs() {
     <frequency>300</frequency>
   </localfile>'
 
-    if ! grep -q "BlueTeam Challenge" "$conf"; then
-        sed -i "s|</ossec_config>|${LOGFILES}\n</ossec_config>|" "$conf"
-        success "ossec.conf agent patché avec les sources de logs."
-    else
-        warn "ossec.conf déjà patché."
-    fi
+    python3 - <<'PYEOF'
+import os
+conf_path = "/var/ossec/etc/ossec.conf"
+with open(conf_path, "r") as f:
+    data = f.read()
+
+logfiles = os.environ.get('LOGFILES', '')
+
+if "BlueTeam Challenge" not in data:
+    # Replace the last occurrence of </ossec_config> to append configuration
+    if "</ossec_config>" in data:
+        parts = data.rsplit("</ossec_config>", 1)
+        data = parts[0] + logfiles + "\n</ossec_config>" + parts[1]
+        with open(conf_path, "w") as f:
+            f.write(data)
+        print("[OK]    ossec.conf agent patché avec les sources de logs.")
+    else:
+        print("[ERROR] Balise </ossec_config> non trouvée.")
+else:
+    print("[WARN]  ossec.conf déjà patché.")
+PYEOF
 
     # Syscheck local sur les répertoires critiques
     python3 - <<'PYEOF'
