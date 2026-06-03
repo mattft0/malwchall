@@ -23,23 +23,41 @@ check_root() {
     [[ $EUID -eq 0 ]] || error "Lancer en root: sudo bash $0"
 }
 
-# ─── STEP 1 — Mise à jour système ────────────────────────────────────────────
+# ─── STEP 1 — Mise à jour système + dépendances ─────────────────────────────
 system_update() {
-    info "Step 1/5 — Mise à jour système..."
-    apt-get update -y  >> "$LOG" 2>&1
+    info "Step 1/5 — Mise à jour système + installation des dépendances..."
+    apt-get update -y >> "$LOG" 2>&1
     apt-get upgrade -y >> "$LOG" 2>&1
-    success "Système à jour."
+
+    # Dépendances requises par le script wazuh-install.sh
+    info "Installation des dépendances (software-properties-common, curl, gnupg)..."
+    apt-get install -y \
+        software-properties-common \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release \
+        debconf-utils \
+        procps \
+        grep \
+        sed \
+        tar >> "$LOG" 2>&1
+    success "Système à jour + dépendances installées."
 }
 
 # ─── STEP 2 — Installation Wazuh All-in-One ──────────────────────────────────
 install_wazuh_server() {
-    if systemctl is-active --quiet wazuh-manager 2>/dev/null; then
-        warn "Wazuh Manager déjà actif — skip install."
-        return
-    fi
     info "Step 2/5 — Installation Wazuh all-in-one (~15-20 min)..."
+    info "Téléchargement du script d'installation..."
     curl -sO https://packages.wazuh.com/4.10/wazuh-install.sh
-    bash ./wazuh-install.sh -a --ignore-check 2>&1 | tee -a "$LOG"
+    chmod +x wazuh-install.sh
+
+    # -a  : all-in-one (manager + indexer + dashboard)
+    # -o  : overwrite/erase existing installation
+    # --ignore-check : ignore OS compatibility warnings
+    info "Lancement de wazuh-install.sh -a -o --ignore-check..."
+    bash ./wazuh-install.sh -a -o --ignore-check 2>&1 | tee -a "$LOG"
     success "Wazuh installé."
 
     info "Extraction des credentials..."
