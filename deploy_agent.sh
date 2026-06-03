@@ -306,7 +306,6 @@ main() {
     echo "  Manager: $MANAGER_IP" | tee -a "$LOG"
     echo "======================================================" | tee -a "$LOG"
 
-    apt-get update -y >> "$LOG" 2>&1
 
     install_agent
     configure_agent_logs
