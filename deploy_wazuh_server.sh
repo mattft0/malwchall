@@ -69,6 +69,16 @@ install_wazuh_server() {
     curl -sO https://packages.wazuh.com/4.10/wazuh-install.sh
     chmod +x wazuh-install.sh
 
+    # ── Patch Debian Trixie ──────────────────────────────────────────────────
+    # software-properties-common est un paquet Ubuntu-only, il n'existe PAS
+    # sur Debian Trixie. Le wazuh-install.sh le requiert mais ne l'utilise
+    # que pour add-apt-repository (inutile ici).
+    # Fix: on remplace l'occurrence par lsb-release (déjà installé) pour que
+    # le check apt-get du script passe sans erreur.
+    info "Patch Debian Trixie: remplacement de software-properties-common..."
+    sed -i 's/software-properties-common/lsb-release/g' wazuh-install.sh
+    success "Patch appliqué."
+
     # -a  : all-in-one (manager + indexer + dashboard)
     # -o  : overwrite/erase existing installation
     # --ignore-check : ignore OS compatibility warnings
