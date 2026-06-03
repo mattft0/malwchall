@@ -1,0 +1,108 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  BlueTeam Challenge — MariaDB 11 Detection Rules                ║
+  ║  IDs: 100100 – 100119                                           ║
+  ╚══════════════════════════════════════════════════════════════════╝
+  Covers:
+    - Brute force / authentication failures
+    - SQL Injection patterns in general log
+    - Privilege escalation (GRANT, CREATE USER, FILE priv)
+    - Data exfiltration (SELECT INTO OUTFILE / LOAD DATA)
+    - UDF / stored procedure abuse
+-->
+<group name="mariadb,blueteam,">
+
+  <!-- ── Base rule: catch all MariaDB log lines ─────────────────── -->
+  <rule id="100100" level="3">
+    <decoded_as>syslog</decoded_as>
+    <match>MariaDB|mysqld|mysql</match>
+    <description>MariaDB: generic log entry</description>
+    <group>mariadb,</group>
+  </rule>
+
+  <!-- ── Authentication failures ────────────────────────────────── -->
+  <rule id="100101" level="8">
+    <if_sid>100100</if_sid>
+    <match>Access denied for user|authentication failure|Login failed|password check failed</match>
+    <description>MariaDB: Authentication failure</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>mariadb,authentication_failed,</group>
+  </rule>
+
+  <!-- Brute force: 5 failures in 60 s -->
+  <rule id="100102" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>100101</if_matched_sid>
+    <same_source_ip/>
+    <description>MariaDB: Brute-force attack detected (5 failures/60s)</description>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+    <group>mariadb,brute_force,</group>
+  </rule>
+
+  <!-- ── SQL Injection patterns ──────────────────────────────────── -->
+  <rule id="100103" level="12">
+    <if_sid>100100</if_sid>
+    <regex>(?i)(union\s+select|or\s+1\s*=\s*1|or\s+'[^']*'\s*=\s*'[^']*'|--|#\s*$|;\s*drop\s+table|;\s*delete\s+from|BENCHMARK\s*\(|SLEEP\s*\(|WAITFOR\s+DELAY|@@version|information_schema)</regex>
+    <description>MariaDB: SQL Injection attempt detected</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>mariadb,sql_injection,attack,</group>
+  </rule>
+
+  <!-- ── Privilege escalation ───────────────────────────────────── -->
+  <rule id="100104" level="12">
+    <if_sid>100100</if_sid>
+    <regex>(?i)(GRANT\s+ALL|GRANT\s+FILE|CREATE\s+USER|ALTER\s+USER|SET\s+GLOBAL\s+general_log|FLUSH\s+PRIVILEGES)</regex>
+    <description>MariaDB: Privilege escalation / configuration change attempt</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>mariadb,privilege_escalation,</group>
+  </rule>
+
+  <!-- ── Data exfiltration via file operations ─────────────────── -->
+  <rule id="100105" level="14">
+    <if_sid>100100</if_sid>
+    <regex>(?i)(SELECT\s+.*INTO\s+OUTFILE|LOAD\s+DATA\s+(LOCAL\s+)?INFILE|INTO\s+DUMPFILE)</regex>
+    <description>MariaDB: Possible data exfiltration via file operation</description>
+    <mitre>
+      <id>T1020</id>
+    </mitre>
+    <group>mariadb,data_exfiltration,</group>
+  </rule>
+
+  <!-- ── UDF / stored procedure abuse ──────────────────────────── -->
+  <rule id="100106" level="14">
+    <if_sid>100100</if_sid>
+    <regex>(?i)(CREATE\s+FUNCTION.*soname|sys_exec|lib_mysqludf|CREATE\s+PROCEDURE\s+.*DETERMINISTIC)</regex>
+    <description>MariaDB: Possible UDF/stored procedure abuse for code execution</description>
+    <mitre>
+      <id>T1059</id>
+    </mitre>
+    <group>mariadb,code_execution,</group>
+  </rule>
+
+  <!-- ── MariaDB service stopped unexpectedly ───────────────────── -->
+  <rule id="100107" level="10">
+    <if_sid>100100</if_sid>
+    <match>mysqld_safe mysqld restarted|Normal shutdown|Forcing close of thread|Aborting</match>
+    <description>MariaDB: Service crash or forced shutdown detected</description>
+    <group>mariadb,service_down,</group>
+  </rule>
+
+  <!-- ── Anonymous login ────────────────────────────────────────── -->
+  <rule id="100108" level="10">
+    <if_sid>100100</if_sid>
+    <regex>(?i)user\s*=\s*''|anonymous\s+user</regex>
+    <description>MariaDB: Anonymous login attempt</description>
+    <mitre>
+      <id>T1078.001</id>
+    </mitre>
+    <group>mariadb,anonymous_login,</group>
+  </rule>
+
+</group>

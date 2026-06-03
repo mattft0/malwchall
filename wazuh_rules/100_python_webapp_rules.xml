@@ -1,0 +1,212 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  BlueTeam Challenge — Python Security Rules                     ║
+  ║  (Pickle, Jinja2/SSTI, JWT, httpx, requests, libxml2/XXE)       ║
+  ║  IDs: 100400 – 100449                                           ║
+  ╚══════════════════════════════════════════════════════════════════╝
+  Detects web/app layer attacks against Python services:
+    - Jinja2 Server-Side Template Injection (SSTI)
+    - Python Pickle deserialization
+    - JWT algorithm confusion (alg:none, RS256->HS256)
+    - XXE via libxml2
+    - SSRF via httpx/requests
+    - Path traversal
+    - Command injection in Python context
+-->
+<group name="python,webapp,blueteam,">
+
+  <!-- ════════════════════════════════════════════════════════════
+       JINJA2 — Server-Side Template Injection (SSTI)
+       ════════════════════════════════════════════════════════════ -->
+
+  <!-- Base: any web access log line -->
+  <rule id="100400" level="3">
+    <decoded_as>syslog</decoded_as>
+    <match>GET |POST |PUT |DELETE |PATCH </match>
+    <description>Web: HTTP request log</description>
+    <group>web,</group>
+  </rule>
+
+  <!-- Jinja2 SSTI payloads in URL/body -->
+  <rule id="100401" level="14">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(\{\{.*\}\}|\{%.*%\}|\{\{.*__class__.*\}\}|\{\{.*__mro__.*\}\}|\{\{.*__subclasses__.*\}\}|\{\{.*config.*\}\}|\{\{.*lipsum.*\}\}|\{\{.*request\..*\}\}|\{\{7\*7\}\}|\{\{'a'\*49\}\})</regex>
+    <description>Jinja2: Server-Side Template Injection (SSTI) attempt detected</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>jinja2,ssti,attack,</group>
+  </rule>
+
+  <!-- SSTI with RCE escalation -->
+  <rule id="100402" level="15">
+    <if_sid>100401</if_sid>
+    <regex>(?i)(__import__|os\.system|subprocess|popen|__builtins__|eval\s*\(|exec\s*\(|compile\s*\()</regex>
+    <description>Jinja2: SSTI with Remote Code Execution payload</description>
+    <mitre>
+      <id>T1059.006</id>
+    </mitre>
+    <group>jinja2,ssti,rce,attack,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════════════════════
+       PICKLE — Deserialization Attacks
+       ════════════════════════════════════════════════════════════ -->
+
+  <!-- Pickle data in HTTP (base64 encoded pickle magic bytes gASV or \x80\x04\x95 or cos) -->
+  <rule id="100410" level="14">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(gASV[A-Za-z0-9+/]{4,}|\\x80\\x04|\\x80\\x05|cos\s*\n|cposix|csubprocess|cpickle|pickle\.loads|pickle\.load\(|__reduce__|__reduce_ex__)</regex>
+    <description>Pickle: Deserialization attack payload detected in HTTP request</description>
+    <mitre>
+      <id>T1059.006</id>
+    </mitre>
+    <group>pickle,deserialization,attack,</group>
+  </rule>
+
+  <!-- Pickle endpoint being accessed with POST -->
+  <rule id="100411" level="10">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(POST.*pickle|POST.*deserializ|Content-Type.*application/x-pickle|Content-Type.*application/octet-stream)</regex>
+    <description>Pickle: Suspicious serialized data upload via HTTP POST</description>
+    <mitre>
+      <id>T1059.006</id>
+    </mitre>
+    <group>pickle,deserialization,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════════════════════
+       JWT — Token Manipulation
+       ════════════════════════════════════════════════════════════ -->
+
+  <!-- JWT "alg:none" attack -->
+  <rule id="100420" level="14">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]{0,4}$|"alg"\s*:\s*"none"|"alg":"none"|alg=none)</regex>
+    <description>JWT: Algorithm "none" attack detected — signature bypass attempt</description>
+    <mitre>
+      <id>T1550</id>
+    </mitre>
+    <group>jwt,algorithm_confusion,attack,</group>
+  </rule>
+
+  <!-- JWT algorithm confusion RS256->HS256 -->
+  <rule id="100421" level="13">
+    <if_sid>100400</if_sid>
+    <regex>(?i)("alg"\s*:\s*"HS256".*"typ"\s*:\s*"JWT"|JWT.*HS256.*RS256|kid.*\.\./|kid.*\/etc\/passwd)</regex>
+    <description>JWT: Algorithm confusion or kid path traversal attack</description>
+    <mitre>
+      <id>T1550</id>
+    </mitre>
+    <group>jwt,algorithm_confusion,attack,</group>
+  </rule>
+
+  <!-- JWT flood/brute -->
+  <rule id="100422" level="10" frequency="20" timeframe="60">
+    <if_matched_sid>100420</if_matched_sid>
+    <same_source_ip/>
+    <description>JWT: Repeated JWT manipulation attempts — possible token brute force</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>jwt,brute_force,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════════════════════
+       libxml2 — XXE (XML External Entity) Injection
+       ════════════════════════════════════════════════════════════ -->
+
+  <rule id="100430" level="14">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(&lt;!ENTITY|&amp;xxe;|SYSTEM\s+"file://|SYSTEM\s+'file://|SYSTEM\s+"http://|DOCTYPE.*ENTITY|&amp;#x[0-9A-Fa-f]+;|ENTITY\s+\w+\s+SYSTEM|php://filter|expect://)</regex>
+    <description>libxml2/XXE: XML External Entity injection attempt detected</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>libxml2,xxe,attack,</group>
+  </rule>
+
+  <!-- XXE to local file read -->
+  <rule id="100431" level="15">
+    <if_sid>100430</if_sid>
+    <regex>(?i)(file:///etc/passwd|file:///etc/shadow|file:///proc/self|file:///var/log|/\.ssh/|file:///root)</regex>
+    <description>libxml2/XXE: Local file read attempt via XXE</description>
+    <mitre>
+      <id>T1083</id>
+    </mitre>
+    <group>libxml2,xxe,lfi,attack,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════════════════════
+       httpx / requests — SSRF
+       ════════════════════════════════════════════════════════════ -->
+
+  <rule id="100440" level="13">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(url=http://127\.|url=http://localhost|url=http://0\.|url=http://169\.254\.|url=http://\[::1\]|url=http://10\.|url=http://192\.168\.|url=http://172\.(1[6-9]|2[0-9]|3[0-1])\.|@localhost|@127\.0\.0\.1|file%3A%2F%2F|dict://|gopher://|ftp://internal)</regex>
+    <description>SSRF: Server-Side Request Forgery attempt targeting internal network</description>
+    <mitre>
+      <id>T1090</id>
+    </mitre>
+    <group>ssrf,attack,</group>
+  </rule>
+
+  <!-- SSRF to metadata services -->
+  <rule id="100441" level="14">
+    <if_sid>100440</if_sid>
+    <regex>(?i)(169\.254\.169\.254|metadata\.google\.internal|metadata\.azure|169\.254\.170\.2)</regex>
+    <description>SSRF: Cloud metadata service access attempt</description>
+    <mitre>
+      <id>T1552.005</id>
+    </mitre>
+    <group>ssrf,cloud_metadata,attack,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════════════════════
+       Generic — Path Traversal & Command Injection
+       ════════════════════════════════════════════════════════════ -->
+
+  <rule id="100445" level="13">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(\.\.%2f|\.\.%2F|%2e%2e%2f|\.\.\/|%2e%2e\/|\.\.\\|etc%2fpasswd|etc/passwd|etc/shadow|proc/self/environ)</regex>
+    <description>Web: Path traversal attack attempt</description>
+    <mitre>
+      <id>T1083</id>
+    </mitre>
+    <group>path_traversal,attack,</group>
+  </rule>
+
+  <rule id="100446" level="13">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(;ls%20|;cat%20|;id%20|\|whoami|\|id\b|%60id%60|\$\(id\)|%3Bwhoami|%26%26whoami|`uname|;uname|;wget\s|;curl\s|;nc\s|;bash\s|;sh\s)</regex>
+    <description>Web: Command injection attempt detected</description>
+    <mitre>
+      <id>T1059</id>
+    </mitre>
+    <group>command_injection,attack,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════════════════════
+       Scan / Recon detection
+       ════════════════════════════════════════════════════════════ -->
+
+  <rule id="100447" level="8">
+    <if_sid>100400</if_sid>
+    <regex>(?i)(sqlmap|nikto|nmap|masscan|dirsearch|gobuster|ffuf|wfuzz|burpsuite|ZAP|acunetix|nessus|openvas|hydra|medusa)</regex>
+    <description>Web: Automated security scanner detected</description>
+    <mitre>
+      <id>T1595</id>
+    </mitre>
+    <group>recon,scanner,</group>
+  </rule>
+
+  <!-- HTTP 500 burst (app crash after attack attempt) -->
+  <rule id="100448" level="10" frequency="10" timeframe="30">
+    <if_sid>100400</if_sid>
+    <match> 500 </match>
+    <same_source_ip/>
+    <description>Web: Burst of HTTP 500 errors — possible active exploitation causing crashes</description>
+    <group>web,exploitation,</group>
+  </rule>
+
+</group>

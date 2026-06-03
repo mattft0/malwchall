@@ -1,0 +1,152 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  BlueTeam Challenge — k3s / Kubernetes Detection Rules          ║
+  ║  IDs: 100600 – 100629                                           ║
+  ╚══════════════════════════════════════════════════════════════════╝
+  Covers:
+    - API server anonymous access
+    - Privilege escalation (ClusterRoleBinding, exec into pod)
+    - Secrets access (etcd, service account tokens)
+    - NodePort/LoadBalancer exposure
+    - Malicious workload creation (hostPID, hostNetwork, privileged)
+    - RBAC manipulation
+    - Pod escape (hostPath /, emptyDir exec)
+-->
+<group name="kubernetes,k3s,k8s,blueteam,">
+
+  <!-- ── Base: K8s audit log JSON lines ─────────────────────────── -->
+  <rule id="100600" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="apiVersion">audit.k8s.io/v1</field>
+    <description>K8s: Audit log entry</description>
+    <group>kubernetes,</group>
+  </rule>
+
+  <!-- ── Anonymous / unauthenticated API calls ─────────────────── -->
+  <rule id="100601" level="12">
+    <if_sid>100600</if_sid>
+    <field name="user.username">system:anonymous</field>
+    <description>K8s: Unauthenticated (anonymous) API request</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>kubernetes,anonymous_access,</group>
+  </rule>
+
+  <!-- ── ClusterRoleBinding creation (privilege escalation) ─────── -->
+  <rule id="100602" level="14">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.resource">clusterrolebindings|rolebindings</field>
+    <field name="verb">create|update|patch</field>
+    <description>K8s: ClusterRoleBinding/RoleBinding created or modified — privilege escalation risk</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>kubernetes,privilege_escalation,rbac,</group>
+  </rule>
+
+  <!-- ── Exec into pod ──────────────────────────────────────────── -->
+  <rule id="100603" level="13">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.subresource">exec</field>
+    <description>K8s: Exec command executed inside a pod</description>
+    <mitre>
+      <id>T1609</id>
+    </mitre>
+    <group>kubernetes,exec_pod,</group>
+  </rule>
+
+  <!-- ── Secrets access ─────────────────────────────────────────── -->
+  <rule id="100604" level="13">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.resource">secrets</field>
+    <field name="verb">get|list|watch</field>
+    <description>K8s: Secrets read/listed — possible credential access</description>
+    <mitre>
+      <id>T1552.007</id>
+    </mitre>
+    <group>kubernetes,secrets_access,</group>
+  </rule>
+
+  <!-- ── Privileged pod creation ────────────────────────────────── -->
+  <rule id="100605" level="15">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.resource">pods</field>
+    <field name="verb">create</field>
+    <field name="requestObject">\.privileged.*true|hostPID.*true|hostNetwork.*true|hostIPC.*true</field>
+    <description>K8s: Privileged or host-namespace pod created — container escape risk</description>
+    <mitre>
+      <id>T1611</id>
+    </mitre>
+    <group>kubernetes,privilege_escalation,container_escape,</group>
+  </rule>
+
+  <!-- ── RBAC ClusterRole creation with wildcard (*) ────────────── -->
+  <rule id="100606" level="14">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.resource">clusterroles|roles</field>
+    <field name="verb">create|update</field>
+    <field name="requestObject">\*</field>
+    <description>K8s: ClusterRole with wildcard (*) permissions created</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>kubernetes,rbac,privilege_escalation,</group>
+  </rule>
+
+  <!-- ── Service account token creation ────────────────────────── -->
+  <rule id="100607" level="11">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.resource">serviceaccounts</field>
+    <field name="objectRef.subresource">token</field>
+    <description>K8s: Service account token generation request</description>
+    <mitre>
+      <id>T1552.007</id>
+    </mitre>
+    <group>kubernetes,token_generation,</group>
+  </rule>
+
+  <!-- ── Node drain / deletion ──────────────────────────────────── -->
+  <rule id="100608" level="12">
+    <if_sid>100600</if_sid>
+    <field name="objectRef.resource">nodes</field>
+    <field name="verb">delete|patch</field>
+    <description>K8s: Node deletion or modification detected — possible DoS</description>
+    <mitre>
+      <id>T1498</id>
+    </mitre>
+    <group>kubernetes,dos,</group>
+  </rule>
+
+  <!-- ── Access denied (403) burst ─────────────────────────────── -->
+  <rule id="100609" level="10" frequency="10" timeframe="60">
+    <if_sid>100600</if_sid>
+    <field name="responseStatus.code">403</field>
+    <same_field>user.username</same_field>
+    <description>K8s: User repeatedly denied — possible API brute force/recon</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>kubernetes,brute_force,</group>
+  </rule>
+
+  <!-- ── k3s specific: direct binary invocation patterns ─────────── -->
+  <rule id="100610" level="10">
+    <decoded_as>syslog</decoded_as>
+    <match>k3s|kubectl|kubeadm</match>
+    <description>K3s/k8s: CLI tool invocation</description>
+    <group>kubernetes,</group>
+  </rule>
+
+  <!-- kubectl get secret from shell -->
+  <rule id="100611" level="13">
+    <if_sid>100610</if_sid>
+    <regex>(?i)(kubectl\s+get\s+secret|kubectl\s+describe\s+secret|kubectl\s+exec.*sh|kubectl\s+exec.*bash|kubectl\s+port-forward)</regex>
+    <description>K8s: Sensitive kubectl command executed on host</description>
+    <mitre>
+      <id>T1552.007</id>
+    </mitre>
+    <group>kubernetes,secrets_access,</group>
+  </rule>
+
+</group>

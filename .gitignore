@@ -1,0 +1,8 @@
+.antigravitycli/
+wazuh-install-files/
+wazuh-install-files.tar
+wazuh-passwords.txt
+deploy_wazuh.log
+deploy_agent.log
+deploy_wazuh_server.log
+*.bak.*

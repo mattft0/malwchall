@@ -1,0 +1,112 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  BlueTeam Challenge — MongoDB 7 Detection Rules                 ║
+  ║  IDs: 100200 – 100219                                           ║
+  ╚══════════════════════════════════════════════════════════════════╝
+  Covers:
+    - Authentication failures & brute force
+    - NoSQL Injection payloads ($where, $gt, $regex)
+    - Unauthorized collections access
+    - mapReduce / $function (JS execution)
+    - Data exfiltration / dump indicators
+    - Configuration modification
+-->
+<group name="mongodb,blueteam,">
+
+  <!-- ── Base rule ─────────────────────────────────────────────── -->
+  <rule id="100200" level="3">
+    <decoded_as>syslog</decoded_as>
+    <match>mongod|mongodb</match>
+    <description>MongoDB: generic log entry</description>
+    <group>mongodb,</group>
+  </rule>
+
+  <!-- ── Authentication failures ────────────────────────────────── -->
+  <rule id="100201" level="8">
+    <if_sid>100200</if_sid>
+    <match>Authentication failed|SASL authentication|auth failed|Unauthorized|AuthenticationFailed</match>
+    <description>MongoDB: Authentication failure</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>mongodb,authentication_failed,</group>
+  </rule>
+
+  <!-- Brute force -->
+  <rule id="100202" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>100201</if_matched_sid>
+    <same_source_ip/>
+    <description>MongoDB: Brute-force attack detected</description>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+    <group>mongodb,brute_force,</group>
+  </rule>
+
+  <!-- ── NoSQL Injection patterns ───────────────────────────────── -->
+  <rule id="100203" level="14">
+    <if_sid>100200</if_sid>
+    <regex>(?i)(\$where|\$gt|\$gte|\$lt|\$lte|\$ne|\$nin|\$regex|\$or|\$and|\$nor|\$not|\$exists|\$type|\$in\b)</regex>
+    <description>MongoDB: NoSQL injection operator detected in query</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>mongodb,nosql_injection,attack,</group>
+  </rule>
+
+  <!-- ── Server-side JS execution (mapReduce / $function) ─────── -->
+  <rule id="100204" level="14">
+    <if_sid>100200</if_sid>
+    <regex>(?i)(mapReduce|\$function|\$accumulator|db\.eval|\.runCommand.*eval)</regex>
+    <description>MongoDB: Server-side JavaScript execution attempt</description>
+    <mitre>
+      <id>T1059.007</id>
+    </mitre>
+    <group>mongodb,code_execution,</group>
+  </rule>
+
+  <!-- ── Database dump / exfiltration ──────────────────────────── -->
+  <rule id="100205" level="13">
+    <if_sid>100200</if_sid>
+    <regex>(?i)(mongodump|mongoexport|\.find\(\)\.|\.aggregate\(\[.*\$out|copyDatabase|cloneCollection)</regex>
+    <description>MongoDB: Possible database dump/exfiltration activity</description>
+    <mitre>
+      <id>T1020</id>
+    </mitre>
+    <group>mongodb,data_exfiltration,</group>
+  </rule>
+
+  <!-- ── User creation / privilege change ──────────────────────── -->
+  <rule id="100206" level="12">
+    <if_sid>100200</if_sid>
+    <regex>(?i)(createUser|grantRolesToUser|updateUser|createRole|grantPrivilegesToRole|db\.addUser)</regex>
+    <description>MongoDB: User/role modification detected</description>
+    <mitre>
+      <id>T1136</id>
+    </mitre>
+    <group>mongodb,privilege_escalation,</group>
+  </rule>
+
+  <!-- ── Accessing system collections ──────────────────────────── -->
+  <rule id="100207" level="11">
+    <if_sid>100200</if_sid>
+    <regex>(?i)(system\.users|system\.roles|admin\.system|local\.oplog|config\.mongos)</regex>
+    <description>MongoDB: Access to sensitive system collection</description>
+    <mitre>
+      <id>T1003</id>
+    </mitre>
+    <group>mongodb,sensitive_data,</group>
+  </rule>
+
+  <!-- ── MongoDB listening without auth ────────────────────────── -->
+  <rule id="100208" level="10">
+    <if_sid>100200</if_sid>
+    <match>security.authorization: disabled|--noauth|without auth</match>
+    <description>MongoDB: Running without authentication — critical misconfiguration</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>mongodb,misconfiguration,</group>
+  </rule>
+
+</group>
