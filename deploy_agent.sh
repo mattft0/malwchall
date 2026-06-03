@@ -206,16 +206,21 @@ conf_path = "/var/ossec/etc/ossec.conf"
 with open(conf_path, "r") as f:
     data = f.read()
 
-# On ajoute un agent_name unique si non présent dans le block enrollment
 if "<agent_name>" not in data:
-    # On cherche à insérer <agent_name>blueteam-agent</agent_name> dans la section <enrollment>
     if "<enrollment>" in data:
         data = data.replace("<enrollment>", "<enrollment>\n      <agent_name>blueteam-agent</agent_name>")
         with open(conf_path, "w") as f:
             f.write(data)
-        print("[OK]    Nom d'agent unique configuré.")
+        print("[OK]    Nom d'agent unique configuré dans la section enrollment existante.")
+    elif "<client>" in data:
+        # Si <enrollment> n'existe pas, on l'injecte dans le block <client> avant </client>
+        enrollment_block = "    <enrollment>\n      <enabled>yes</enabled>\n      <agent_name>blueteam-agent</agent_name>\n    </enrollment>\n  </client>"
+        data = data.replace("</client>", enrollment_block, 1)
+        with open(conf_path, "w") as f:
+            f.write(data)
+        print("[OK]    Block enrollment et nom d'agent unique créés.")
     else:
-        print("[WARN]  Section enrollment non trouvée pour configurer le nom unique.")
+        print("[WARN]  Section client non trouvée, impossible d'ajouter le nom unique.")
 else:
     print("[WARN]  Nom d'agent déjà personnalisé.")
 PYEOF
@@ -287,9 +292,6 @@ configure_auditd() {
 
 # Docker socket
 -w /var/run/docker.sock -p rwa -k docker_socket
-
-# LD_PRELOAD (env variable injection)
--a always,exit -F arch=b64 -S execve -E ld_preload -k ld_preload_exec
 AUDITRULES
 
     augenrules --load >> "$LOG" 2>&1 || warn "augenrules --load a échoué ou non disponible"
