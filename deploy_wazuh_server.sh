@@ -26,23 +26,39 @@ check_root() {
 # ─── STEP 1 — Mise à jour système + dépendances ─────────────────────────────
 system_update() {
     info "Step 1/5 — Mise à jour système + installation des dépendances..."
-    apt-get update -y >> "$LOG" 2>&1
-    apt-get upgrade -y >> "$LOG" 2>&1
 
-    # Dépendances requises par le script wazuh-install.sh
-    info "Installation des dépendances (software-properties-common, curl, gnupg)..."
-    apt-get install -y \
-        software-properties-common \
-        apt-transport-https \
-        ca-certificates \
-        curl \
-        gnupg \
-        lsb-release \
-        debconf-utils \
-        procps \
-        grep \
-        sed \
-        tar >> "$LOG" 2>&1
+    export DEBIAN_FRONTEND=noninteractive
+
+    info "apt-get update..."
+    apt-get update -y 2>&1 | tee -a "$LOG" || warn "apt-get update a rencontré des erreurs (continué)"
+
+    info "apt-get upgrade..."
+    apt-get upgrade -y \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        2>&1 | tee -a "$LOG" || warn "apt-get upgrade partiel (continué)"
+
+    # Dépendances requises par wazuh-install.sh — installées une par une
+    # pour éviter qu'un seul paquet manquant tue le script entier
+    info "Installation des dépendances Wazuh..."
+    local DEPS=(
+        software-properties-common
+        apt-transport-https
+        ca-certificates
+        curl
+        gnupg
+        lsb-release
+        procps
+        tar
+    )
+    for pkg in "${DEPS[@]}"; do
+        if apt-get install -y "$pkg" 2>&1 | tee -a "$LOG"; then
+            success "  ✓ $pkg"
+        else
+            warn "  ✗ $pkg non disponible — continué"
+        fi
+    done
+
     success "Système à jour + dépendances installées."
 }
 
