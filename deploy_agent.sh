@@ -47,7 +47,10 @@ install_agent() {
     if dpkg -l | grep -q wazuh-agent; then
         apt-get remove -y wazuh-agent >> "$LOG" 2>&1 || true
     fi
-    WAZUH_MANAGER="$MANAGER_IP" apt-get install -y --allow-downgrades wazuh-agent="$target_ver" >> "$LOG" 2>&1
+    DEBIAN_FRONTEND=noninteractive WAZUH_MANAGER="$MANAGER_IP" apt-get install -y \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        --allow-downgrades wazuh-agent="$target_ver" >> "$LOG" 2>&1
     success "Agent installé et configuré pour: $MANAGER_IP"
 }
 
