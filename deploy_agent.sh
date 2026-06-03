@@ -196,6 +196,10 @@ else:
     print("[WARN]  ossec.conf déjà patché.")
 PYEOF
 
+    # S'assurer que l'adresse du Manager est correctement configurée
+    sed -i "s|<address>MANAGER_IP</address>|<address>$MANAGER_IP</address>|g" "$conf"
+    sed -i "s|<address>127.0.0.1</address>|<address>$MANAGER_IP</address>|g" "$conf"
+
     # Syscheck local sur les répertoires critiques
     python3 - <<'PYEOF'
 conf_path = "/var/ossec/etc/ossec.conf"
