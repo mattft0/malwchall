@@ -242,38 +242,15 @@ AGENTCONF
     success "agent.conf créé → sera poussé automatiquement à tous les agents."
 }
 
-# ─── STEP 5 — Active Response + restart ──────────────────────────────────────
+# ─── STEP 5 — Restart Wazuh ──────────────────────────────────────────────────
+# Mode DETECTION ONLY — aucun blocage automatique d'IP
+# Les alertes sont visibles dans le dashboard et dans alerts.log
 configure_server() {
-    info "Step 5/5 — Configuration Active Response + restart Wazuh..."
+    info "Step 5/5 — Restart Wazuh (mode détection uniquement)..."
     local conf="/var/ossec/etc/ossec.conf"
     [[ -f "$conf" ]] || error "ossec.conf non trouvé"
 
     cp "$conf" "${conf}.bak.$(date +%s)"
-
-    # Active Response : bloquer les IPs attaquantes via firewall-drop
-    local AR_BLOCK='
-  <!-- ===== Active Response BlueTeam Challenge ===== -->
-  <!-- Bloquer les attaques critiques: SQLi, SSTI, NoSQLi, RCE, container escape -->
-  <active-response>
-    <command>firewall-drop</command>
-    <location>defined-agent</location>
-    <rules_id>100102,100103,100104,100105,100106,100202,100203,100204,100303,100401,100402,100410,100420,100430,100431,100501,100503,100601,100605,100720</rules_id>
-    <timeout>3600</timeout>
-  </active-response>
-  <!-- Bloquer les scans et brute force -->
-  <active-response>
-    <command>firewall-drop</command>
-    <location>defined-agent</location>
-    <rules_id>100102,100202,100302,100447</rules_id>
-    <timeout>1800</timeout>
-  </active-response>'
-
-    if ! grep -q "Active Response BlueTeam" "$conf"; then
-        sed -i "s|</ossec_config>|${AR_BLOCK}\n</ossec_config>|" "$conf"
-        success "Active Response configuré."
-    else
-        warn "Active Response déjà configuré."
-    fi
 
     # Restart
     systemctl restart wazuh-manager 2>/dev/null || /var/ossec/bin/wazuh-control restart
@@ -289,7 +266,7 @@ configure_server() {
     IP=$(hostname -I | awk '{print $1}')
     echo ""
     echo "╔══════════════════════════════════════════════╗"
-    echo "║  WAZUH SERVER PRÊT                           ║"
+    echo "║  WAZUH SERVER PRÊT — DETECTION ONLY          ║"
     echo "╠══════════════════════════════════════════════╣"
     echo "║  Dashboard : https://$IP"
     echo "║  Credentials: $SCRIPT_DIR/wazuh-passwords.txt"

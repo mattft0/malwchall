@@ -105,14 +105,12 @@ https://<IP_MACHINE_A>
 
 ---
 
-## ⚡ Active Response (automatique)
+## 👁️ Mode Détection uniquement
 
-Les IPs déclenchant des règles critiques sont **automatiquement bloquées** par `iptables` sur **Machine B** :
+Wazuh est configuré en **mode passif** — **aucun blocage automatique d'IP**.
+Les attaques sont détectées, loggées et visibles dans le dashboard, mais les attaquants ne sont pas bloqués.
 
-| Déclencheur | Blocage |
-|---|---|
-| SQLi, SSTI, NoSQLi, container escape, reverse shell | 1h |
-| Brute force, scanners | 30 min |
+> Cela permet d'observer le comportement offensif complet et de réagir manuellement.
 
 ---
 
