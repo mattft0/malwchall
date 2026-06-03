@@ -26,19 +26,28 @@ error()   { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG"; exit 1; }
 
 # ─── STEP 1 — Installer l'agent Wazuh ────────────────────────────────────────
 install_agent() {
-    info "Step 1/4 — Ajout du dépôt Wazuh (version 4.10 pour s'aligner avec le Manager)..."
+    info "Step 1/4 — Ajout du dépôt Wazuh..."
     curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH \
         | gpg --yes --dearmor -o /usr/share/keyrings/wazuh.gpg
-    echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.10/apt/ stable main" \
+    echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" \
         > /etc/apt/sources.list.d/wazuh.list
     apt-get update -y >> "$LOG" 2>&1
 
-    info "Installation/Downgrade de l'agent (pointé vers $MANAGER_IP)..."
-    # Supprime la version supérieure si elle existe déjà pour forcer l'alignement
+    # Détection dynamique de la version cible (soit celle du manager local, soit la dernière 4.10.x)
+    local target_ver=""
+    if dpkg -l | grep -q wazuh-manager; then
+        target_ver=$(dpkg-query --showformat='${Version}' --show wazuh-manager 2>/dev/null || echo "")
+    fi
+    if [[ -z "$target_ver" ]]; then
+        # Sinon, on prend la dernière 4.10.x disponible dans le dépôt
+        target_ver=$(apt-cache madison wazuh-agent 2>/dev/null | grep -oE "4\.10\.[0-9]+-[0-9]+" | head -n 1 || echo "4.10.4-1")
+    fi
+
+    info "Installation/Downgrade de l'agent en version $target_ver (pointé vers $MANAGER_IP)..."
     if dpkg -l | grep -q wazuh-agent; then
         apt-get remove -y wazuh-agent >> "$LOG" 2>&1 || true
     fi
-    WAZUH_MANAGER="$MANAGER_IP" apt-get install -y --allow-downgrades wazuh-agent >> "$LOG" 2>&1
+    WAZUH_MANAGER="$MANAGER_IP" apt-get install -y --allow-downgrades wazuh-agent="$target_ver" >> "$LOG" 2>&1
     success "Agent installé et configuré pour: $MANAGER_IP"
 }
 
