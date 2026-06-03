@@ -200,6 +200,26 @@ PYEOF
     sed -i "s|<address>MANAGER_IP</address>|<address>$MANAGER_IP</address>|g" "$conf"
     sed -i "s|<address>127.0.0.1</address>|<address>$MANAGER_IP</address>|g" "$conf"
 
+    # Corriger le conflit de nom avec le Manager (nom "debian" déjà pris)
+    python3 - <<'PYEOF'
+conf_path = "/var/ossec/etc/ossec.conf"
+with open(conf_path, "r") as f:
+    data = f.read()
+
+# On ajoute un agent_name unique si non présent dans le block enrollment
+if "<agent_name>" not in data:
+    # On cherche à insérer <agent_name>blueteam-agent</agent_name> dans la section <enrollment>
+    if "<enrollment>" in data:
+        data = data.replace("<enrollment>", "<enrollment>\n      <agent_name>blueteam-agent</agent_name>")
+        with open(conf_path, "w") as f:
+            f.write(data)
+        print("[OK]    Nom d'agent unique configuré.")
+    else:
+        print("[WARN]  Section enrollment non trouvée pour configurer le nom unique.")
+else:
+    print("[WARN]  Nom d'agent déjà personnalisé.")
+PYEOF
+
     # Syscheck local sur les répertoires critiques
     python3 - <<'PYEOF'
 conf_path = "/var/ossec/etc/ossec.conf"
