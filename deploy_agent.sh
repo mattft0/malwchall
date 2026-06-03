@@ -257,8 +257,8 @@ configure_auditd() {
 -a always,exit -F arch=b64 -S execve -E ld_preload -k ld_preload_exec
 AUDITRULES
 
-    augenrules --load >> "$LOG" 2>&1
-    systemctl restart auditd 2>/dev/null && success "auditd configuré et redémarré." || warn "auditd: redémarrage échoué"
+    augenrules --load >> "$LOG" 2>&1 || warn "augenrules --load a échoué ou non disponible"
+    (systemctl restart auditd >> "$LOG" 2>&1 || service auditd restart >> "$LOG" 2>&1) && success "auditd configuré et redémarré." || warn "auditd: redémarrage échoué"
 }
 
 # ─── STEP 4 — Démarrer l'agent ────────────────────────────────────────────────
